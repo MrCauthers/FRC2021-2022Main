@@ -4,23 +4,28 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.ExampleSubsystem;
+import java.util.function.Supplier;
+
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.robot.subsystems.DriveSubsystem;
 
 /** An example command that uses an example subsystem. */
 public class ArcadeDriveCMD extends CommandBase {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-  private final ExampleSubsystem m_subsystem;
+  private final DriveSubsystem driveSubsystem;
+  private final Supplier<Double> speedFunction, turnFunction;
 
   /**
    * Creates a new ExampleCommand.
    *
    * @param subsystem The subsystem used by this command.
    */
-  public ArcadeDriveCMD(ExampleSubsystem subsystem) {
-    m_subsystem = subsystem;
+  public ArcadeDriveCMD(DriveSubsystem driveSubsystem, Supplier<Double> speedFunction, Supplier<Double> turnFunction) {
+    this.speedFunction = speedFunction;
+    this.turnFunction = turnFunction;
+    this.driveSubsystem = driveSubsystem ;
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(subsystem);
+    addRequirements(driveSubsystem);
   }
 
   // Called when the command is initially scheduled.
@@ -29,7 +34,25 @@ public class ArcadeDriveCMD extends CommandBase {
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
-  public void execute() {}
+  public void execute() {
+    double realTimeSpeed = speedFunction.get();
+    double realTimeTurn = turnFunction.get();
+
+    // fixing inverted reverse
+
+    double left = 0;
+    double right = 0;
+
+    if (realTimeSpeed <= -0.01) {
+      left = realTimeSpeed - realTimeTurn;
+      right = realTimeSpeed + realTimeTurn;  
+    } else {
+      left = realTimeSpeed + realTimeTurn;
+      right = realTimeSpeed - realTimeTurn;
+    }
+
+
+  }
 
   // Called once the command ends or is interrupted.
   @Override

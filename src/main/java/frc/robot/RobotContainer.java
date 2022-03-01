@@ -5,10 +5,15 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.commands.ArcadeDriveCMD;
+import frc.robot.commands.IntakeSetCMD;
+import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -18,12 +23,19 @@ import edu.wpi.first.wpilibj2.command.Command;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
+  private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
+  private final DriveSubsystem driveSubsystem = new DriveSubsystem();
+  private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+  private final LauncherSubsystem launcherSubsystem = new LauncherSubsystem();
 
-  private final ArcadeDriveCMD m_autoCommand = new ArcadeDriveCMD(m_exampleSubsystem);
+  private final Joystick joy1 = new Joystick(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+
+    driveSubsystem.setDefaultCommand(driveSubsystem, () -> -joy1.getRawAxis(1) * 0.6, () -> joy1.getRawAxis(4) * 0.3);
+    intakeSubsystem.setDefaultCommand(new IntakeSetCMD(intakeSubsystem, true));
+
     // Configure the button bindings
     configureButtonBindings();
   }
@@ -34,7 +46,11 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
-  private void configureButtonBindings() {}
+  private void configureButtonBindings() {
+
+    new JoystickButton(joy1, 1).whileActiveOnce(new IntakeSetCMD(IntakeSubsystem, false)); //NEED TO FIGURE OUT ID FOR BUTTONS!!
+
+  }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.

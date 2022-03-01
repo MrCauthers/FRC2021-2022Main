@@ -4,25 +4,23 @@
 
 package frc.robot.commands;
 
+import frc.robot.subsystems.ExampleSubsystem;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.robot.subsystems.IntakeSubsystem;
 
 /** An example command that uses an example subsystem. */
-public class IntakeSetCMD extends CommandBase {
+public class IndexCMD extends CommandBase {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-  private final IntakeSubsystem intakeSubsystem;
-  private final boolean open;
+  private final ExampleSubsystem m_subsystem;
 
   /**
    * Creates a new ExampleCommand.
    *
    * @param subsystem The subsystem used by this command.
    */
-  public IntakeSetCMD(IntakeSubsystem intakeSubsystem) {
-    this.open = open;
-    this.intakeSubsystem = intakeSubsystem;
+  public IndexCMD(ExampleSubsystem subsystem) {
+    m_subsystem = subsystem;
     // Use addRequirements() here to declare subsystem dependencies.
-    addRequirements(intakeSubsystem);
+    addRequirements(subsystem);
   }
 
   // Called when the command is initially scheduled.
@@ -31,9 +29,7 @@ public class IntakeSetCMD extends CommandBase {
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
-  public void execute() {
-    intakeSubsystem.setPosition(open);
-  }
+  public void execute() {}
 
   // Called once the command ends or is interrupted.
   @Override

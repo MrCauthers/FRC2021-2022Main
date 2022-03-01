@@ -4,19 +4,22 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class ExampleSubsystem extends SubsystemBase {
+public class IntakeSubsystem extends SubsystemBase {
   /** Creates a new ExampleSubsystem. */
-  public ExampleSubsystem() {}
 
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
+  private final Spark intakeMotor = new Spark(5);   // NEED TO GET ID FOR THIS!!!!!!!!
+
+  public IntakeSubsystem() {}
+
+  public void setPosition(boolean open) {
+    if (open) {
+      intakeMotor.set(-1);
+    } else {
+      intakeMotor.set(1);
+    }
   }
 
-  @Override
-  public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
-  }
 }
