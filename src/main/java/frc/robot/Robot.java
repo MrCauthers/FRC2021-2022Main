@@ -362,7 +362,8 @@ public class Robot extends TimedRobot {
 
   double launcherPower = 0;
   double indexerPower = 0;
-  double IntakePower = 0;
+  double intakePower = 0;
+  double climberPower = 0;
 
 //  if (joyDrive.getRawButton(1)==true){
   if (joyLauncher.getRawAxis(3)>0.1){
@@ -381,13 +382,22 @@ public class Robot extends TimedRobot {
   triggerSpark.set(triggerPower);
 
   if (joyLauncher.getRawButton(1)==true){
-    IntakePower = -0.7;
+    intakePower = -0.7;
     indexerPower = -1;
   }
 
-  intakeSpark.set(IntakePower);    
+  if (joyLauncher.getRawButton(3)==true){
+    climberPower = 0.5;
+  }
+
+  if (joyLauncher.getRawButton(4)==true){
+    climberPower = -0.5;
+  }
+
+  intakeSpark.set(intakePower);    
   launcherSpark.set(launcherPower);
   indexerSpark.set(indexerPower);
+  climberSpark.set(climberPower);
 
 
   SmartDashboard.putNumber("Speed", speed);
