@@ -123,7 +123,7 @@ public class Robot extends TimedRobot {
   final double kD = 0;  // NEED TO ADJUST!
   final double iLimit = 1;  // distance from set point when PID starts - NEED TO ADJUST?
 
-  double setpoint = 8;
+  double setpoint = 8.25;
   double errorSum = 0;
   double lastTimestamp = 0;
   double startTime = 0;
@@ -150,6 +150,8 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("setpoint", setpoint);
     SmartDashboard.putNumber("starTime", startTime);
     SmartDashboard.putNumber("current time", Timer.getFPGATimestamp());
+
+    indexerSpark.set(-1);
 
     // PART 1: MOVE FORWARD AND PICK UP CARGO
     // First second of autonomous - drive forward.
@@ -199,7 +201,7 @@ public class Robot extends TimedRobot {
       lastError = error;
     } //end of else statement - end of autonomous drive to setpoint
 
-
+    SmartDashboard.putBoolean("start180", start180);
     //PART 2: 180 TURN
 
     if (start180) {
