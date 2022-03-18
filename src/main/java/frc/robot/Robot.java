@@ -150,58 +150,59 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("setpoint", setpoint);
     SmartDashboard.putNumber("starTime", startTime);
     SmartDashboard.putNumber("current time", Timer.getFPGATimestamp());
+    SmartDashboard.putBoolean("start180", start180);
 
     indexerSpark.set(-1);
 
-    // PART 1: MOVE FORWARD AND PICK UP CARGO
-    // First second of autonomous - drive forward.
-    if (Timer.getFPGATimestamp()-startTime<1){
-      driveLeftTalon.set(ControlMode.PercentOutput, 0.4);
-      driveRightTalon.set(ControlMode.PercentOutput, -0.4);
-      driveLeftSpark.set(0.4);
-      driveRightSpark.set(-0.4);
-    // Next 0.5 seconds of autonomous - stop drive motors, intake will fall into place
-    } else if (Timer.getFPGATimestamp()-startTime<1.5){
-      driveLeftTalon.set(ControlMode.PercentOutput, -0.5);
-      driveRightTalon.set(ControlMode.PercentOutput, 0.5);
-      driveLeftSpark.set(0);
-      driveRightSpark.set(0);
-    // Rest of autonomous drive until pick up position (setpoint)
-    } else {
-      // calculations (error = distance from setpoint)
-      double error = setpoint - sensorPosition;
-      double dt = Timer.getFPGATimestamp() - lastTimestamp;
-      SmartDashboard.putNumber("error", error);
+      // PART 1: MOVE FORWARD AND PICK UP CARGO
+      // First second of autonomous - drive forward.
+    if (!start180){
+      if (Timer.getFPGATimestamp()-startTime<1){
+        driveLeftTalon.set(ControlMode.PercentOutput, 0.4);
+        driveRightTalon.set(ControlMode.PercentOutput, -0.4);
+        driveLeftSpark.set(0.4);
+        driveRightSpark.set(-0.4);
+      // Next 0.5 seconds of autonomous - stop drive motors, intake will fall into place
+      } else if (Timer.getFPGATimestamp()-startTime<1.5){
+        driveLeftTalon.set(ControlMode.PercentOutput, -0.5);
+        driveRightTalon.set(ControlMode.PercentOutput, 0.5);
+        driveLeftSpark.set(0);
+        driveRightSpark.set(0);
+      // Rest of autonomous drive until pick up position (setpoint)
+      } else {
+        // calculations (error = distance from setpoint)
+        double error = setpoint - sensorPosition;
+        double dt = Timer.getFPGATimestamp() - lastTimestamp;
+        SmartDashboard.putNumber("error", error);
 
-      if (Math.abs(error) < iLimit) {
-        errorSum += error * dt;
-        // run intake when within 1 foot of setpoint
-        intakeSpark.set(-0.7);    
-      }
+        if (Math.abs(error) < iLimit) {
+          errorSum += error * dt;
+          // run intake when within 1 foot of setpoint
+          intakeSpark.set(-0.7);    
+        }
 
-      double errorRate = (error - lastError) / dt;
+        double errorRate = (error - lastError) / dt;
 
-      double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
+        double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
 
 
-      // when setpoint is reached:
-      if (outputSpeed == 0 && start180 == false) {
-        intakeSpark.set(0);
-        start180 = true;
-      }
-    
-      // output to motors
-      driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
-      driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
-      driveLeftSpark.set(outputSpeed);
-      driveRightSpark.set(-outputSpeed);
+        // when setpoint is reached:
+        if (error < 0.01 && start180 == false) {
+          start180 = true;
+        }
       
-      // update last- variables
-      lastTimestamp = Timer.getFPGATimestamp();
-      lastError = error;
-    } //end of else statement - end of autonomous drive to setpoint
+        // output to motors
+        driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
+        driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
+        driveLeftSpark.set(outputSpeed);
+        driveRightSpark.set(-outputSpeed);
+        
+        // update last- variables
+        lastTimestamp = Timer.getFPGATimestamp();
+        lastError = error;
+      } //end of else statement - end of autonomous drive to setpoint
+    }
 
-    SmartDashboard.putBoolean("start180", start180);
     //PART 2: 180 TURN
 
     if (start180) {
