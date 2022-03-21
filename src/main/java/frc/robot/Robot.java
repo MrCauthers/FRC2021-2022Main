@@ -176,7 +176,7 @@ public class Robot extends TimedRobot {
       if (Math.abs(error) < iLimit) {
         errorSum += error * dt;
         // run intake when within 1 foot of setpoint
-        intakeSpark.set(-0.7);    
+        intakeSpark.set(-0.6);    
       }
 
       double errorRate = (error - lastError) / dt;
@@ -393,7 +393,7 @@ public class Robot extends TimedRobot {
   }
 
   if (joyLauncher.getRawButton(4)==true){
-    climberPower = -0.5;
+    climberPower = -1.0;
   }
 
   intakeSpark.set(intakePower);    
