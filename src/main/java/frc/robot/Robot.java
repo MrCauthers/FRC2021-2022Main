@@ -26,6 +26,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 //import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 //import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.cameraserver.CameraServer;
+
 
 
 /**
@@ -91,6 +93,9 @@ public class Robot extends TimedRobot {
     driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
     driveRightTalon.setSelectedSensorPosition(0, 0, 10);
 
+    // camera on Dashboard
+    CameraServer.startAutomaticCapture();
+
   }
 
   @Override
@@ -130,15 +135,15 @@ public class Robot extends TimedRobot {
   double lastError = 0;
   boolean start180 = false;
   double setPoint180 = setpoint + 3.3;
-  boolean moveToLaunchPosition = false;
+  boolean movetoLaunchSetpoint = false;
   double launchSetpoint = 3;
   boolean encodersReset = false;
   double finalSetPoint = -3;
-  
+  boolean atLaunchSetpoint = false;
+  boolean atFinalSetpoint = false;
+
   @Override
   public void autonomousPeriodic() {
-
-    //double setpoint = 8;  // remove if not needed!
 
     // get sensor position
     double leftPosition = driveLeftTalon.getSelectedSensorPosition() * kDriveTick2Feet;
@@ -152,7 +157,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("startTime", startTime);
     SmartDashboard.putNumber("current time", Timer.getFPGATimestamp());
     SmartDashboard.putBoolean("start180", start180);
-    SmartDashboard.putBoolean("moveToLaunchPosition", moveToLaunchPosition);
+    SmartDashboard.putBoolean("movetoLaunchSetpoint", movetoLaunchSetpoint);
 
     indexerSpark.set(-1);
 
@@ -207,8 +212,8 @@ public class Robot extends TimedRobot {
 
     //PART 2: 180 TURN
 
-    if (start180 && !moveToLaunchPosition) {
-      /* attempt #1: using gyro
+    if (start180 && !movetoLaunchSetpoint) {
+      /* attempt #1: using gyro (not tested! maybe later!)
       if (Math.abs(gyro.getAngle()) <= 3) {
         driveLeftSpark.set(leftSlow - (gyro.getAngle()) / 15);
         driveLeftTalon.set(ControlMode.PercentOutput, leftSlow - (gyro.getAngle()) / 15);
@@ -216,64 +221,65 @@ public class Robot extends TimedRobot {
         driveRightTalon.set(ControlMode.PercentOutput, rightSlow - (gyro.getAngle()) / 15);
       } else if (Math.abs(gyro.getAngle()) < 10) {
         if (gyro.getAngle() > 0) {
-        driveLeftSpark.set(leftSlow);
-        driveLeftTalon.set(ControlMode.PercentOutput,leftSlow);
-        driveRightSpark.set(1.1 * rightSlow);
-        driveLeftTalon.set(ControlMode.PercentOutput,1.1 * rightSlow);
+          driveLeftSpark.set(leftSlow);
+          driveLeftTalon.set(ControlMode.PercentOutput,leftSlow);
+          driveRightSpark.set(1.1 * rightSlow);
+          driveLeftTalon.set(ControlMode.PercentOutput,1.1 * rightSlow);
         } else if (gyro.getAngle() < 0) {
-        driveLeftSpark.set(1.1 * leftSlow);
-        driveLeftTalon.set(ControlMode.PercentOutput,1.1 * leftSlow);
-        driveRightSpark.set(rightSlow);
-        driveLeftTalon.set(ControlMode.PercentOutput,rightSlow);
+          driveLeftSpark.set(1.1 * leftSlow);
+          driveLeftTalon.set(ControlMode.PercentOutput,1.1 * leftSlow);
+          driveRightSpark.set(rightSlow);
+          driveLeftTalon.set(ControlMode.PercentOutput,rightSlow);
         }
       } else
         if (gyro.getAngle() > 0) {
-        while (gyro.getAngle() > 10 && isAutonomous()) {
-          driveLeftSpark.set(-rotateSpeed);
-          driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeed);
-          driveRightSpark.set(-rotateSpeed);
-          driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeed);
-        }
-        while (gyro.getAngle() > 0 && isAutonomous()) {
-        driveLeftSpark.set(-rotateSpeedSlow);
-        driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
-        driveRightSpark.set(-rotateSpeedSlow);
-        driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
-        }
-        while (gyro.getAngle() < 0 && isAutonomous()) {
-        driveLeftSpark.set(rotateSpeedSlow);
-        driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
-        driveRightSpark.set(rotateSpeedSlow);
-        driveRightTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
-        }
-      } else {
-        while (gyro.getAngle() < -10 && isAutonomous()) {
-        driveLeftSpark.set(rotateSpeed);
-        driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeed);
-        driveRightSpark.set(rotateSpeed);
-        driveRightTalon.set(ControlMode.PercentOutput,rotateSpeed);
-        }
-        while (gyro.getAngle() < 0 && isAutonomous()) {
-        driveLeftSpark.set(rotateSpeedSlow);
-        driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
-        driveRightSpark.set(rotateSpeedSlow);
-        driveRightTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
-        }
-        while (gyro.getAngle() > 0 && isAutonomous()) {
-        driveLeftSpark.set(-rotateSpeedSlow);
-        driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
-        driveRightSpark.set(-rotateSpeedSlow);
-        driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
-        }
-      } */
-
+          while (gyro.getAngle() > 10 && isAutonomous()) {
+            driveLeftSpark.set(-rotateSpeed);
+            driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeed);
+            driveRightSpark.set(-rotateSpeed);
+            driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeed);
+          }
+          while (gyro.getAngle() > 0 && isAutonomous()) {
+          driveLeftSpark.set(-rotateSpeedSlow);
+          driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
+          driveRightSpark.set(-rotateSpeedSlow);
+          driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
+          }
+          while (gyro.getAngle() < 0 && isAutonomous()) {
+          driveLeftSpark.set(rotateSpeedSlow);
+          driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
+          driveRightSpark.set(rotateSpeedSlow);
+          driveRightTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
+          }
+        } else {
+          while (gyro.getAngle() < -10 && isAutonomous()) {
+          driveLeftSpark.set(rotateSpeed);
+          driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeed);
+          driveRightSpark.set(rotateSpeed);
+          driveRightTalon.set(ControlMode.PercentOutput,rotateSpeed);
+          }
+          while (gyro.getAngle() < 0 && isAutonomous()) {
+          driveLeftSpark.set(rotateSpeedSlow);
+          driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
+          driveRightSpark.set(rotateSpeedSlow);
+          driveRightTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
+          }
+          while (gyro.getAngle() > 0 && isAutonomous()) {
+          driveLeftSpark.set(-rotateSpeedSlow);
+          driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
+          driveRightSpark.set(-rotateSpeedSlow);
+          driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
+          }
+        } 
+      }*/
+      
       // Attempt #2: using encoders only
       double error = setPoint180 - leftPosition;
       SmartDashboard.putNumber("error", error);
 
       double outputSpeed = kP * error;
 
-      // move ball into position
+      // move cargo into position
       indexerSpark.set(-1);
       launcherSpark.set(-0.7); 
 
@@ -288,26 +294,21 @@ public class Robot extends TimedRobot {
       lastError = error;    
       SmartDashboard.putNumber("outputSpeed", outputSpeed);
      
-      if (outputSpeed < 0.05) {
-        moveToLaunchPosition = true;
+      if (outputSpeed < 0.06) {
+        movetoLaunchSetpoint = true;
         startTime = Timer.getFPGATimestamp();
-        // reset encoders to zero again for finalSetPoint
-        driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
-        driveRightTalon.setSelectedSensorPosition(0, 0, 10);
-      }
+       }
     } // end of 180 turn
 
-    // PART 3: MOVE TO LAUNCH POSITION AND FIRE
-    if (moveToLaunchPosition) {
- /*
-      if (!encodersReset){
+    // PART 3: MOVE TO LAUNCH POSITION
+    if (movetoLaunchSetpoint && !atLaunchSetpoint) {
  
-        // reset encoders to zero
-        driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
-        driveRightTalon.setSelectedSensorPosition(0, 0, 10);
-        encodersReset = true;
-      }
+      // keep moving cargo into position
+      indexerSpark.set(-1);
+      launcherSpark.set(-0.7); 
 
+      /*
+      
       // calculations (error = distance from setpoint)
       double error = launchSetpoint - sensorPosition;
       SmartDashboard.putNumber("error", error);
@@ -323,14 +324,24 @@ public class Robot extends TimedRobot {
       // update last- variables
       lastTimestamp = Timer.getFPGATimestamp();
       lastError = error;
-   */
+      */
 
-      // move ball into position
-      indexerSpark.set(-1);
-      launcherSpark.set(-0.7); 
+      double error = 0; // remove this when above code is used!
 
+      if (error < 0.01) {
+        atLaunchSetpoint = true;
+      }
       triggerSpark.set(-1);
  
+    }
+
+    // PART 4: LAUNCH!
+
+    if (atLaunchSetpoint){
+
+      triggerSpark.set(-1);
+      double error = 0;
+
       if (Timer.getFPGATimestamp()-startTime>1 && Timer.getFPGATimestamp()-startTime<1.25){
         // output to motors
         driveLeftTalon.set(ControlMode.PercentOutput, 0.5);
@@ -350,30 +361,33 @@ public class Robot extends TimedRobot {
         driveLeftSpark.set(0);
         driveRightSpark.set(0);
         lastTimestamp = 0;
-      } else { // move completely out of Tarmac area
+      } else { // move completely out of Tarmac area      
 
-        // calculations (error = distance from setpoint)
-        double error = finalSetPoint - sensorPosition;
-        double dt = Timer.getFPGATimestamp() - lastTimestamp;
-        SmartDashboard.putNumber("error", error);
+      // calculations (error = distance from setpoint)
+      error = finalSetPoint - sensorPosition;
+      double dt = Timer.getFPGATimestamp() - lastTimestamp;
+      SmartDashboard.putNumber("error", error);
 
-        if (Math.abs(error) < iLimit) {
-          errorSum += error * dt; 
-        }
+      if (Math.abs(error) < iLimit) {
+        errorSum += error * dt; 
+      }
 
-        double errorRate = (error - lastError) / dt;
+      double errorRate = (error - lastError) / dt;
 
-        double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
+      double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
 
-        // output to motors
-        driveLeftTalon.set(ControlMode.PercentOutput, -outputSpeed);
-        driveRightTalon.set(ControlMode.PercentOutput, outputSpeed);
-        driveLeftSpark.set(-outputSpeed);
-        driveRightSpark.set(outputSpeed);
-        
-        // update last- variables
-        lastTimestamp = Timer.getFPGATimestamp();
-        lastError = error;
+      /* CODE ABOVE NEEDS TO BE TESTED FIRST!!!
+      // output to motors
+      driveLeftTalon.set(ControlMode.PercentOutput, -outputSpeed);
+      driveRightTalon.set(ControlMode.PercentOutput, outputSpeed);
+      driveLeftSpark.set(-outputSpeed);
+      driveRightSpark.set(outputSpeed);
+      
+      */
+
+      // update last- variables
+      lastTimestamp = Timer.getFPGATimestamp();
+      lastError = error;
                
       }
 
