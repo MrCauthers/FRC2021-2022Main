@@ -470,6 +470,10 @@ public class Robot extends TimedRobot {
     climberPower = -0.5;
   }
 
+  if (joyLauncher.getRawButton(2)==true){
+    intakePower = 1; // reverse intake to unstick ball!
+  }
+
   intakeSpark.set(intakePower);    
   launcherSpark.set(launcherPower);
   indexerSpark.set(indexerPower);
