@@ -515,11 +515,11 @@ public class Robot extends TimedRobot {
     }
 
     if (joyLauncher.getRawButton(3)==true){
-      climberPower = 0.5;
+      climberPower = 1;
     }
 
     if (joyLauncher.getRawButton(4)==true){
-      climberPower = -0.5;
+      climberPower = -1;
     }
 
     if (joyLauncher.getRawButton(2)==true){ // reverse intake to unstick ball!
