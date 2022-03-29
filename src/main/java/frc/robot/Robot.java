@@ -133,7 +133,11 @@ public class Robot extends TimedRobot {
   double lastTimestamp = 0;
   double startTime = 0;
   double lastError = 0;
-  double setpoint = 6.5;
+  
+  // double setpoint = 6.5; //ONLY FOR REGULAR AUTONOMOUS
+
+  double setpoint = -5; //ONLY FOR ALTERNATE AUTONOMOUS
+
   boolean start180 = false;
   double setPoint180 = 3.35;
   boolean movetoLaunchSetpoint = false;
@@ -145,7 +149,56 @@ public class Robot extends TimedRobot {
   boolean leaveTarmac = false;
 
   @Override
-  public void autonomousPeriodic() {
+
+  public void autonomousPeriodic() {   //ALTERNATE AUTONOMOUS - simple back up and fire
+
+    // get sensor position
+    double leftPosition = driveLeftTalon.getSelectedSensorPosition() * kDriveTick2Feet;
+    double rightPosition = driveRightTalon.getSelectedSensorPosition() * kDriveTick2Feet * -1; //rightPosition is a negative number!
+    double sensorPosition = (leftPosition + rightPosition)/2;
+
+    SmartDashboard.putNumber("leftPosition:", leftPosition);
+    SmartDashboard.putNumber("rightPosition:", rightPosition);
+    SmartDashboard.putNumber("distance from start:", sensorPosition);
+    SmartDashboard.putNumber("startTime", startTime);
+    SmartDashboard.putNumber("current time", Timer.getFPGATimestamp());
+
+    indexerSpark.set(-1);
+    launcherSpark.set(-0.6); 
+
+    // calculations (error = distance from setpoint)
+    double error = setpoint - sensorPosition;
+    SmartDashboard.putNumber("error", error);
+
+    double dt = Timer.getFPGATimestamp() - lastTimestamp;
+
+    if (Math.abs(error) < iLimit) {
+      errorSum += error * dt;
+      // run intake when within 1 foot of setpoint
+      //intakeSpark.set(-0.6);    
+    }
+
+    double errorRate = (error - lastError) / dt;
+
+    double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
+    SmartDashboard.putNumber("auto outputSpeed", outputSpeed);
+  
+    // output to motors
+    driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
+    driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
+    driveLeftSpark.set(outputSpeed);
+    driveRightSpark.set(-outputSpeed);
+    
+    // update last- variables
+    lastTimestamp = Timer.getFPGATimestamp();
+    lastError = error;
+
+    if (Math.abs(error) < 0.03) {
+      triggerSpark.set(-1);
+    }
+  } 
+
+/*  public void autonomousPeriodic() {
 
     // get sensor position
     double leftPosition = driveLeftTalon.getSelectedSensorPosition() * kDriveTick2Feet;
@@ -275,13 +328,13 @@ public class Robot extends TimedRobot {
           driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
           }
         } 
-      }*/
+      } 
       
       // Attempt #2: using encoders only
 
       // move cargo into position - always running from now on!
       indexerSpark.set(-1);
-      launcherSpark.set(-0.7); 
+      launcherSpark.set(-0.6); 
 
       double error = setPoint180 - leftPosition;
       double dt = Timer.getFPGATimestamp() - lastTimestamp;
@@ -320,7 +373,7 @@ public class Robot extends TimedRobot {
  
       // keep moving cargo into position - still always on!
       indexerSpark.set(-1);
-      launcherSpark.set(-0.7); 
+      launcherSpark.set(-0.6); 
       
       // calculations (error = distance from launchSetpoint)
       double error = launchSetpoint - sensorPosition;
@@ -345,9 +398,6 @@ public class Robot extends TimedRobot {
       lastTimestamp = Timer.getFPGATimestamp();
       lastError = error;
       
-
-      //double error = 0; // remove this when above code is used!
-
       if (Math.abs(error) < 0.01) {
         atLaunchSetpoint = true;
         driveLeftTalon.set(ControlMode.PercentOutput, 0);
@@ -429,6 +479,7 @@ public class Robot extends TimedRobot {
       lastError = error;               
     }
   }
+  */
 
   @Override
   public void teleopInit() {}
@@ -497,7 +548,7 @@ public class Robot extends TimedRobot {
     double climberPower = 0;
 
     if (joyLauncher.getRawAxis(3)>0.1){
-      launcherPower = -0.7;
+      launcherPower = -0.6;
       indexerPower = -1;
     }
     
@@ -510,7 +561,7 @@ public class Robot extends TimedRobot {
     triggerSpark.set(triggerPower);
 
     if (joyLauncher.getRawButton(1)==true){
-      intakePower = -0.7;
+      intakePower = -0.6;
       indexerPower = -1;
     }
 
