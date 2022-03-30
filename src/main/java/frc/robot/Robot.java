@@ -23,17 +23,19 @@ import edu.wpi.first.wpilibj.motorcontrol.Spark;
 //import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.math.controller.PIDController;
-//import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 //import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 //import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.cameraserver.CameraServer;
-
-
+//import edu.wpi.first.math.controller.PIDController;
 
 /**
- * The VM is configured to automatically run this class, and to call the functions corresponding to
- * each mode, as described in the TimedRobot documentation. If you change the name of this class or
- * the package after creating this project, you must also update the build.gradle file in the
+ * The VM is configured to automatically run this class, and to call the
+ * functions corresponding to
+ * each mode, as described in the TimedRobot documentation. If you change the
+ * name of this class or
+ * the package after creating this project, you must also update the
+ * build.gradle file in the
  * project.
  */
 public class Robot extends TimedRobot {
@@ -52,29 +54,31 @@ public class Robot extends TimedRobot {
 
   private Joystick joyDrive = new Joystick(0);
   private Joystick joyLauncher = new Joystick(1);
-  //private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+  private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
 
   // climber motor
   private Spark climberSpark = new Spark(3);
 
-  // unit conversion - needed to convert # of ticks in a full rotation to # of feet
-  private final double kDriveTick2Feet = 1.0/4096*6*Math.PI/12;
+  // unit conversion - needed to convert # of ticks in a full rotation to # of
+  // feet
+  private final double kDriveTick2Feet = 1.0 / 4096 * 6 * Math.PI / 12;
 
   // Gyro 180 turn variables
   double leftSlow = 0.24;
   double rightSlow = -0.24;
   double rotateSpeed = 0.35;
-  double rotateSpeedSlow = 0.25; 
+  double rotateSpeedSlow = 0.25;
 
   Timer timer = new Timer();
 
   /**
-   * This function is run when the robot is first started up and should be used for any
+   * This function is run when the robot is first started up and should be used
+   * for any
    * initialization code.
    */
 
   @Override
-  public void robotInit() { 
+  public void robotInit() {
 
     // invert settings
     driveLeftTalon.setInverted(true);
@@ -83,8 +87,13 @@ public class Robot extends TimedRobot {
     driveLeftSpark.setInverted(true);
 
     // init encoders
-    driveLeftTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 10); 
-    driveRightTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 10); //The "10" is the timeoutMS - set as non-zero so robot will retry if sending command fails
+    driveLeftTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 10);
+    driveRightTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 10); // The "10" is the
+                                                                                                  // timeoutMS - set as
+                                                                                                  // non-zero so robot
+                                                                                                  // will retry if
+                                                                                                  // sending command
+                                                                                                  // fails
 
     driveLeftTalon.setSensorPhase(false);
     driveRightTalon.setSensorPhase(true);
@@ -96,13 +105,17 @@ public class Robot extends TimedRobot {
     // camera on Dashboard
     CameraServer.startAutomaticCapture();
 
+    // initialize gyro
+    gyro.calibrate();
+
   }
 
   @Override
   public void robotPeriodic() {
     // putting encooder values up on SmartDashboard
     SmartDashboard.putNumber("Left Motor Encoder Value:", driveLeftTalon.getSelectedSensorPosition() * kDriveTick2Feet);
-    SmartDashboard.putNumber("Right Motor Encoder Value:", driveRightTalon.getSelectedSensorPosition() * kDriveTick2Feet);
+    SmartDashboard.putNumber("Right Motor Encoder Value:",
+        driveRightTalon.getSelectedSensorPosition() * kDriveTick2Feet);
   }
 
   @Override
@@ -120,26 +133,28 @@ public class Robot extends TimedRobot {
 
   // init variables for PID
 
-  final double kP = 0.12;  // NEED TO ADJUST! DO THIS ONE FIRST!
-  final double kI = 0.2;  // NEED TO ADJUST!
-  final double kD = 0;  // NEED TO ADJUST!
-  final double launchkP = 0.1;  // NEED TO ADJUST! DO THIS ONE FIRST!
-  final double launchkI = 0.1;  // NEED TO ADJUST!
-  final double launchkD = 0;  // NEED TO ADJUST!
-  final double iLimit = 1;  // distance from set point when PID starts - NEED TO ADJUST?
+  final double kP = 0.12;
+  final double kI = 0.2;
+  final double kD = 0;
+  final double launchkP = 0.1;
+  final double launchkI = 0.1;
+  final double launchkD = 0;
+  final double rotatekP = 0.01;
+  final double iLimit = 1; // distance from set point when PID starts - NEED TO ADJUST?
   final double iLimit180 = 1;
 
   double errorSum = 0;
   double lastTimestamp = 0;
   double startTime = 0;
   double lastError = 0;
-  
-  // double setpoint = 6.5; //ONLY FOR REGULAR AUTONOMOUS
 
-  double setpoint = -5; //ONLY FOR ALTERNATE AUTONOMOUS
+  double setpoint = 6.5; // ONLY FOR AUTONOMOUS B: FULL AUTO WITH 180 TURN AND FIRE
+
+  // double setpoint = -5; //ONLY FOR AUTONOMOUS A & C: BACK UP AND SHOOT
 
   boolean start180 = false;
-  double setPoint180 = 3.35;
+  double setPointTurn = 180; // for gyro turn
+  // double setPointTurn = 3.35; // for encoder turn value 3.35 = 180 degree turn on linoleum
   boolean movetoLaunchSetpoint = false;
   double launchSetpoint = 1.5;
   boolean encodersReset = false;
@@ -150,60 +165,108 @@ public class Robot extends TimedRobot {
 
   @Override
 
-  public void autonomousPeriodic() {   //ALTERNATE AUTONOMOUS - simple back up and fire
+  /*
+   * public void autonomousPeriodic() { // AUTONOMOUS A - simple back up and fire
+   * 
+   * // get sensor position
+   * double leftPosition = driveLeftTalon.getSelectedSensorPosition() *
+   * kDriveTick2Feet;
+   * double rightPosition = driveRightTalon.getSelectedSensorPosition() *
+   * kDriveTick2Feet * -1; //rightPosition is a negative number!
+   * double sensorPosition = (leftPosition + rightPosition)/2;
+   * 
+   * SmartDashboard.putNumber("leftPosition:", leftPosition);
+   * SmartDashboard.putNumber("rightPosition:", rightPosition);
+   * SmartDashboard.putNumber("distance from start:", sensorPosition);
+   * SmartDashboard.putNumber("startTime", startTime);
+   * SmartDashboard.putNumber("current time", Timer.getFPGATimestamp());
+   * 
+   * indexerSpark.set(-1);
+   * launcherSpark.set(-0.6);
+   * 
+   * // calculations (error = distance from setpoint)
+   * double error = setpoint - sensorPosition;
+   * SmartDashboard.putNumber("error", error);
+   * 
+   * double dt = Timer.getFPGATimestamp() - lastTimestamp;
+   * 
+   * if (Math.abs(error) < iLimit) {
+   * errorSum += error * dt;
+   * // run intake when within 1 foot of setpoint
+   * //intakeSpark.set(-0.6);
+   * }
+   * 
+   * double errorRate = (error - lastError) / dt;
+   * 
+   * double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
+   * SmartDashboard.putNumber("auto outputSpeed", outputSpeed);
+   * 
+   * // output to motors
+   * driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
+   * driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
+   * driveLeftSpark.set(outputSpeed);
+   * driveRightSpark.set(-outputSpeed);
+   * 
+   * // update last- variables
+   * lastTimestamp = Timer.getFPGATimestamp();
+   * lastError = error;
+   * 
+   * if (Math.abs(error) < 0.03) {
+   * triggerSpark.set(-1);
+   * }
+   * }
+   */
+
+  /*
+   * public void autonomousPeriodic() { // AUTONOMOUS C - simple back up, NO fire!
+   * 
+   * // get sensor position
+   * double leftPosition = driveLeftTalon.getSelectedSensorPosition() *
+   * kDriveTick2Feet;
+   * double rightPosition = driveRightTalon.getSelectedSensorPosition() *
+   * kDriveTick2Feet * -1; //rightPosition is a negative number!
+   * double sensorPosition = (leftPosition + rightPosition)/2;
+   * 
+   * SmartDashboard.putNumber("leftPosition:", leftPosition);
+   * SmartDashboard.putNumber("rightPosition:", rightPosition);
+   * SmartDashboard.putNumber("distance from start:", sensorPosition);
+   * SmartDashboard.putNumber("startTime", startTime);
+   * SmartDashboard.putNumber("current time", Timer.getFPGATimestamp());
+   * 
+   * // calculations (error = distance from setpoint)
+   * double error = setpoint - sensorPosition;
+   * SmartDashboard.putNumber("error", error);
+   * 
+   * double dt = Timer.getFPGATimestamp() - lastTimestamp;
+   * 
+   * if (Math.abs(error) < iLimit) {
+   * errorSum += error * dt;
+   * }
+   * 
+   * double errorRate = (error - lastError) / dt;
+   * 
+   * double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
+   * SmartDashboard.putNumber("auto outputSpeed", outputSpeed);
+   * 
+   * // output to motors
+   * driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
+   * driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
+   * driveLeftSpark.set(outputSpeed);
+   * driveRightSpark.set(-outputSpeed);
+   * 
+   * // update last- variables
+   * lastTimestamp = Timer.getFPGATimestamp();
+   * lastError = error;
+   * 
+   * }
+   * }
+   */
+  public void autonomousPeriodic() { // AUTONOMOUS B - FULL AUTONOMOUS USING ENCODERS OR GYRO
 
     // get sensor position
     double leftPosition = driveLeftTalon.getSelectedSensorPosition() * kDriveTick2Feet;
-    double rightPosition = driveRightTalon.getSelectedSensorPosition() * kDriveTick2Feet * -1; //rightPosition is a negative number!
-    double sensorPosition = (leftPosition + rightPosition)/2;
-
-    SmartDashboard.putNumber("leftPosition:", leftPosition);
-    SmartDashboard.putNumber("rightPosition:", rightPosition);
-    SmartDashboard.putNumber("distance from start:", sensorPosition);
-    SmartDashboard.putNumber("startTime", startTime);
-    SmartDashboard.putNumber("current time", Timer.getFPGATimestamp());
-
-    indexerSpark.set(-1);
-    launcherSpark.set(-0.6); 
-
-    // calculations (error = distance from setpoint)
-    double error = setpoint - sensorPosition;
-    SmartDashboard.putNumber("error", error);
-
-    double dt = Timer.getFPGATimestamp() - lastTimestamp;
-
-    if (Math.abs(error) < iLimit) {
-      errorSum += error * dt;
-      // run intake when within 1 foot of setpoint
-      //intakeSpark.set(-0.6);    
-    }
-
-    double errorRate = (error - lastError) / dt;
-
-    double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
-    SmartDashboard.putNumber("auto outputSpeed", outputSpeed);
-  
-    // output to motors
-    driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
-    driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
-    driveLeftSpark.set(outputSpeed);
-    driveRightSpark.set(-outputSpeed);
-    
-    // update last- variables
-    lastTimestamp = Timer.getFPGATimestamp();
-    lastError = error;
-
-    if (Math.abs(error) < 0.03) {
-      triggerSpark.set(-1);
-    }
-  } 
-
-/*  public void autonomousPeriodic() {
-
-    // get sensor position
-    double leftPosition = driveLeftTalon.getSelectedSensorPosition() * kDriveTick2Feet;
-    double rightPosition = driveRightTalon.getSelectedSensorPosition() * kDriveTick2Feet * -1; //rightPosition is a negative number!
-    double sensorPosition = (leftPosition + rightPosition)/2;
+    double rightPosition = driveRightTalon.getSelectedSensorPosition() * kDriveTick2Feet * -1; // rightPosition is a negative number!
+    double sensorPosition = (leftPosition + rightPosition) / 2;
 
     SmartDashboard.putNumber("leftPosition:", leftPosition);
     SmartDashboard.putNumber("rightPosition:", rightPosition);
@@ -218,21 +281,22 @@ public class Robot extends TimedRobot {
 
     indexerSpark.set(-1);
 
-      // PART 1: MOVE FORWARD AND PICK UP CARGO
-      // First second of autonomous - drive forward.
-    if (!start180){
-      if (Timer.getFPGATimestamp()-startTime<1){
+    // PART 1: MOVE FORWARD AND PICK UP CARGO
+    // First second of autonomous - drive forward.
+    if (!start180) {
+      if (Timer.getFPGATimestamp() - startTime < 1) {
         driveLeftTalon.set(ControlMode.PercentOutput, 0.4);
         driveRightTalon.set(ControlMode.PercentOutput, -0.4);
         driveLeftSpark.set(0.4);
         driveRightSpark.set(-0.4);
-      // Next 0.5 seconds of autonomous - stop drive motors, intake will fall into place
-      } else if (Timer.getFPGATimestamp()-startTime<1.5){
+        // Next 0.5 seconds of autonomous - stop drive motors, intake will fall into
+        // place
+      } else if (Timer.getFPGATimestamp() - startTime < 1.5) {
         driveLeftTalon.set(ControlMode.PercentOutput, -0.5);
         driveRightTalon.set(ControlMode.PercentOutput, 0.5);
         driveLeftSpark.set(0);
         driveRightSpark.set(0);
-      // Rest of autonomous drive up until pick up position (setpoint)
+        // Rest of autonomous drive up until pick up position (setpoint)
       } else {
         // calculations (error = distance from setpoint)
         double error = setpoint - sensorPosition;
@@ -240,112 +304,47 @@ public class Robot extends TimedRobot {
 
         if (Math.abs(error) < iLimit) {
           errorSum += error * dt;
-          // run intake when within 1 foot of setpoint
-          intakeSpark.set(-0.6);    
+          // start running intake when within 1.5 feet of setpoint
+          intakeSpark.set(-0.6);
         }
 
         double errorRate = (error - lastError) / dt;
 
         double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
 
-
-        // after pickup setpoint is reached, turn 180
+        // after pickup setpoint is reached, go to part 2: 180 turn
         if (error < 0.01 && start180 == false) {
           start180 = true;
-        // reset encoders to zero
-        driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
-        driveRightTalon.setSelectedSensorPosition(0, 0, 10);
+          gyro.reset();
+          // reset encoders to zero
+          driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
+          driveRightTalon.setSelectedSensorPosition(0, 0, 10);
         }
-      
+
         // output to motors
         driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
         driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
         driveLeftSpark.set(outputSpeed);
         driveRightSpark.set(-outputSpeed);
-        
+
         // update last- variables
         lastTimestamp = Timer.getFPGATimestamp();
         lastError = error;
-      } //end of else statement - end of autonomous drive to setpoint
-  
-      //PART 2: 180 TURN
+      } // end of else statement - end of autonomous drive to setpoint
+
+      // PART 2: 180 TURN
     } else if (start180 && !movetoLaunchSetpoint) {
-      /* attempt #1: using gyro (not tested! maybe later!)
-      if (Math.abs(gyro.getAngle()) <= 3) {
-        driveLeftSpark.set(leftSlow - (gyro.getAngle()) / 15);
-        driveLeftTalon.set(ControlMode.PercentOutput, leftSlow - (gyro.getAngle()) / 15);
-        driveRightSpark.set(rightSlow - (gyro.getAngle()) / 15);
-        driveRightTalon.set(ControlMode.PercentOutput, rightSlow - (gyro.getAngle()) / 15);
-      } else if (Math.abs(gyro.getAngle()) < 10) {
-        if (gyro.getAngle() > 0) {
-          driveLeftSpark.set(leftSlow);
-          driveLeftTalon.set(ControlMode.PercentOutput,leftSlow);
-          driveRightSpark.set(1.1 * rightSlow);
-          driveLeftTalon.set(ControlMode.PercentOutput,1.1 * rightSlow);
-        } else if (gyro.getAngle() < 0) {
-          driveLeftSpark.set(1.1 * leftSlow);
-          driveLeftTalon.set(ControlMode.PercentOutput,1.1 * leftSlow);
-          driveRightSpark.set(rightSlow);
-          driveLeftTalon.set(ControlMode.PercentOutput,rightSlow);
-        }
-      } else
-        if (gyro.getAngle() > 0) {
-          while (gyro.getAngle() > 10 && isAutonomous()) {
-            driveLeftSpark.set(-rotateSpeed);
-            driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeed);
-            driveRightSpark.set(-rotateSpeed);
-            driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeed);
-          }
-          while (gyro.getAngle() > 0 && isAutonomous()) {
-          driveLeftSpark.set(-rotateSpeedSlow);
-          driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
-          driveRightSpark.set(-rotateSpeedSlow);
-          driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
-          }
-          while (gyro.getAngle() < 0 && isAutonomous()) {
-          driveLeftSpark.set(rotateSpeedSlow);
-          driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
-          driveRightSpark.set(rotateSpeedSlow);
-          driveRightTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
-          }
-        } else {
-          while (gyro.getAngle() < -10 && isAutonomous()) {
-          driveLeftSpark.set(rotateSpeed);
-          driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeed);
-          driveRightSpark.set(rotateSpeed);
-          driveRightTalon.set(ControlMode.PercentOutput,rotateSpeed);
-          }
-          while (gyro.getAngle() < 0 && isAutonomous()) {
-          driveLeftSpark.set(rotateSpeedSlow);
-          driveLeftTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
-          driveRightSpark.set(rotateSpeedSlow);
-          driveRightTalon.set(ControlMode.PercentOutput,rotateSpeedSlow);
-          }
-          while (gyro.getAngle() > 0 && isAutonomous()) {
-          driveLeftSpark.set(-rotateSpeedSlow);
-          driveLeftTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
-          driveRightSpark.set(-rotateSpeedSlow);
-          driveRightTalon.set(ControlMode.PercentOutput,-rotateSpeedSlow);
-          }
-        } 
-      } 
-      
-      // Attempt #2: using encoders only
+      // attempt #2: using gyro - NO PID!
+      double outputSpeed = 0;
+      double angle = Math.abs(gyro.getAngle());
 
-      // move cargo into position - always running from now on!
-      indexerSpark.set(-1);
-      launcherSpark.set(-0.6); 
+      double error = setPointTurn - angle;
 
-      double error = setPoint180 - leftPosition;
-      double dt = Timer.getFPGATimestamp() - lastTimestamp;
-      SmartDashboard.putNumber("setPoint180", setPoint180);
-      
-
-      if (Math.abs(error) < (iLimit180)) {
-        errorSum += error * dt;  
+      if ((angle < setPointTurn) && (error > 0)) {
+        outputSpeed = 0.1;
+      } else {
+        outputSpeed = 0;
       }
-
-      double outputSpeed = kP * error; 
 
       // output to motors
       driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
@@ -353,143 +352,237 @@ public class Robot extends TimedRobot {
       driveLeftSpark.set(outputSpeed);
       driveRightSpark.set(outputSpeed);
 
-      // update last- variables
-      lastTimestamp = Timer.getFPGATimestamp();
-      lastError = error;    
-      SmartDashboard.putNumber("outputSpeed", outputSpeed);
-      SmartDashboard.putNumber("180 error", error);
-     
-      if (Math.abs(error) < (0.5)) { // change to (outputSpeed<0.05) ???? Why isn't this working?
+      if (Math.abs(error) < 3) {
         movetoLaunchSetpoint = true;
         // reset startTime for next part
         startTime = Timer.getFPGATimestamp();
-        // reset encoders to zero to move to launch position
-        driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
-        driveRightTalon.setSelectedSensorPosition(0, 0, 10);
-       }
-  
-       // PART 3: MOVE TO LAUNCH POSITION
-    } else if (movetoLaunchSetpoint && !atLaunchSetpoint) {
- 
-      // keep moving cargo into position - still always on!
-      indexerSpark.set(-1);
-      launcherSpark.set(-0.6); 
-      
-      // calculations (error = distance from launchSetpoint)
-      double error = launchSetpoint - sensorPosition;
-      double dt = Timer.getFPGATimestamp() - lastTimestamp;
-      SmartDashboard.putNumber("error Launch", error);
-
-      if (Math.abs(error) < iLimit) {
-        errorSum += error * dt; 
-      }
-
-      double errorRate = (error - lastError) / dt;
-      
-      double outputSpeed = launchkP * error + launchkI * errorSum + launchkD * errorRate;
-
-      // output to motors
-      driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
-      driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
-      driveLeftSpark.set(outputSpeed);
-      driveRightSpark.set(-outputSpeed);
-      
-      // update last- variables
-      lastTimestamp = Timer.getFPGATimestamp();
-      lastError = error;
-      
-      if (Math.abs(error) < 0.01) {
-        atLaunchSetpoint = true;
         driveLeftTalon.set(ControlMode.PercentOutput, 0);
         driveRightTalon.set(ControlMode.PercentOutput, 0);
         driveLeftSpark.set(0);
         driveRightSpark.set(0);
-        // reset encoders to zero to back out of Tarmac area
+          // reset encoders to zero to move to launch position
         driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
         driveRightTalon.setSelectedSensorPosition(0, 0, 10);
-        // reset startTime
-        startTime = Timer.getFPGATimestamp();
       }
-      triggerSpark.set(-1);
+      SmartDashboard.putNumber("180 error", error);
+      SmartDashboard.putNumber("calculated angle", angle);
+      SmartDashboard.putNumber("angle", gyro.getAngle());
+      SmartDashboard.putNumber("180 outputSpeed", outputSpeed);
 
-      // PART 4: LAUNCH!
- 
-    } else if (atLaunchSetpoint && !leaveTarmac) {
-      triggerSpark.set(-1);
-      // double error = 0; DELETE IF NOT NEEDED!
-
-      if (Timer.getFPGATimestamp()-startTime<1){
-        // wait for 1 second to launch the first cargo
-        driveLeftTalon.set(ControlMode.PercentOutput, 0);
-        driveRightTalon.set(ControlMode.PercentOutput, 0);
-        driveLeftSpark.set(0);
-        driveRightSpark.set(0);      
-      } else if (Timer.getFPGATimestamp()-startTime>1 && Timer.getFPGATimestamp()-startTime<1.25){
-        // jiggle forward and back to get second cargo into place
-        driveLeftTalon.set(ControlMode.PercentOutput, -0.5);
-        driveRightTalon.set(ControlMode.PercentOutput, 0.5);
-        driveLeftSpark.set(-0.5);
-        driveRightSpark.set(0.5);
-      } else if (Timer.getFPGATimestamp()-startTime>1.25 && Timer.getFPGATimestamp()-startTime<1.5){   
-        driveLeftTalon.set(ControlMode.PercentOutput, 0.5);
-        driveRightTalon.set(ControlMode.PercentOutput, -0.5);
-        driveLeftSpark.set(0.5);
-        driveRightSpark.set(-0.5);        
-      } else if (Timer.getFPGATimestamp()-startTime>1.5 && Timer.getFPGATimestamp()-startTime<4.5) {
-        // wait 3 seconds to fire 2nd cargo
-        driveLeftTalon.set(ControlMode.PercentOutput, 0);
-        driveRightTalon.set(ControlMode.PercentOutput, 0);
-        driveLeftSpark.set(0);
-        driveRightSpark.set(0);
-        // reset encoders to zero to back out of Tarmac area
-        driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
-        driveRightTalon.setSelectedSensorPosition(0, 0, 10);
-      } else if (Timer.getFPGATimestamp()-startTime>4.5) {
-        leaveTarmac = true;
-        lastTimestamp = 0;
-        // reset encoders to zero to back out of Tarmac area
-        driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
-        driveRightTalon.setSelectedSensorPosition(0, 0, 10);       
-      } 
-
-    } else if (leaveTarmac) {
-      // move completely out of Tarmac area - back up 3 feet
-
-      // calculations (error = distance from setpoint)
-      double error = finalSetPoint - sensorPosition;
-      double dt = Timer.getFPGATimestamp() - lastTimestamp;
-      SmartDashboard.putNumber("Tarmac error", error);
-
-      if (Math.abs(error) < iLimit) {
-        errorSum += error * dt; 
-      }
-
-      double errorRate = (error - lastError) / dt;
-
-      double outputSpeed = -1 * (kP * error + kI * errorSum + kD * errorRate); // *-1 need to move in reverse!
-
-      // output to motors
-      driveLeftTalon.set(ControlMode.PercentOutput, -outputSpeed);
-      driveRightTalon.set(ControlMode.PercentOutput, outputSpeed);
-      driveLeftSpark.set(-outputSpeed);
-      driveRightSpark.set(outputSpeed);     
-
-      // update last- variables
-      lastTimestamp = Timer.getFPGATimestamp();
-      lastError = error;               
+      /*
+       * // attempt #1: using gyro + PID
+       * double angle = gyro.getAngle();
+       * 
+       * // calculations (error = distance from 180)
+       * double error = setPointTurn - Math.abs(angle);
+       * 
+       * SmartDashboard.putNumber("180 error", error);
+       * SmartDashboard.putNumber("calculated angle", angle);
+       * SmartDashboard.putNumber("angle", gyro.getAngle());
+       * 
+       * double outputSpeed = rotatekP * error;
+       * SmartDashboard.putNumber("180 outputSpeed", outputSpeed);
+       * 
+       * // output to motors
+       * driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
+       * driveRightTalon.set(ControlMode.PercentOutput, outputSpeed);
+       * driveLeftSpark.set(outputSpeed);
+       * driveRightSpark.set(outputSpeed);
+       * 
+       * if (Math.abs(error) < (0.5)) {
+       * movetoLaunchSetpoint = true;
+       * // reset startTime for next part
+       * startTime = Timer.getFPGATimestamp();
+       * // reset encoders to zero to move to launch position
+       * driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
+       * driveRightTalon.setSelectedSensorPosition(0, 0, 10);
+       * }
+       */
     }
+
   }
-  */
+  /*
+   * // Attempt #2: using encoders only
+   * 
+   * // move cargo into position - always running from now on!
+   * indexerSpark.set(-1);
+   * launcherSpark.set(-0.6);
+   * 
+   * double error = setPointTurn - leftPosition;
+   * double dt = Timer.getFPGATimestamp() - lastTimestamp;
+   * SmartDashboard.putNumber("setPointTurn", setPointTurn);
+   * 
+   * 
+   * if (Math.abs(error) < (iLimit180)) {
+   * errorSum += error * dt;
+   * }
+   * 
+   * double outputSpeed = kP * error;
+   * 
+   * // output to motors
+   * driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
+   * driveRightTalon.set(ControlMode.PercentOutput, outputSpeed);
+   * driveLeftSpark.set(outputSpeed);
+   * driveRightSpark.set(outputSpeed);
+   * 
+   * // update last- variables
+   * lastTimestamp = Timer.getFPGATimestamp();
+   * lastError = error;
+   * SmartDashboard.putNumber("outputSpeed", outputSpeed);
+   * SmartDashboard.putNumber("180 error", error);
+   * 
+   * if (Math.abs(error) < (0.5)) {
+   * movetoLaunchSetpoint = true;
+   * // reset startTime for next part
+   * startTime = Timer.getFPGATimestamp();
+   * // reset encoders to zero to move to launch position
+   * driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
+   * driveRightTalon.setSelectedSensorPosition(0, 0, 10);
+   * }
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * // PART 3: MOVE TO LAUNCH POSITION
+   * } else if (movetoLaunchSetpoint && !atLaunchSetpoint) {
+   * 
+   * // keep moving cargo into position - still always on!
+   * indexerSpark.set(-1);
+   * launcherSpark.set(-0.6);
+   * 
+   * // calculations (error = distance from launchSetpoint)
+   * double error = launchSetpoint - sensorPosition;
+   * double dt = Timer.getFPGATimestamp() - lastTimestamp;
+   * SmartDashboard.putNumber("error Launch", error);
+   * 
+   * if (Math.abs(error) < iLimit) {
+   * errorSum += error * dt;
+   * }
+   * 
+   * double errorRate = (error - lastError) / dt;
+   * 
+   * double outputSpeed = launchkP * error + launchkI * errorSum + launchkD *
+   * errorRate;
+   * 
+   * // output to motors
+   * driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
+   * driveRightTalon.set(ControlMode.PercentOutput, -outputSpeed);
+   * driveLeftSpark.set(outputSpeed);
+   * driveRightSpark.set(-outputSpeed);
+   * 
+   * // update last- variables
+   * lastTimestamp = Timer.getFPGATimestamp();
+   * lastError = error;
+   * 
+   * if (Math.abs(error) < 0.01) {
+   * atLaunchSetpoint = true;
+   * driveLeftTalon.set(ControlMode.PercentOutput, 0);
+   * driveRightTalon.set(ControlMode.PercentOutput, 0);
+   * driveLeftSpark.set(0);
+   * driveRightSpark.set(0);
+   * // reset encoders to zero to back out of Tarmac area
+   * driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
+   * driveRightTalon.setSelectedSensorPosition(0, 0, 10);
+   * // reset startTime
+   * startTime = Timer.getFPGATimestamp();
+   * }
+   * triggerSpark.set(-1);
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * // PART 4: LAUNCH!
+   * 
+   * } else if (atLaunchSetpoint && !leaveTarmac) {
+   * triggerSpark.set(-1);
+   * // double error = 0; DELETE IF NOT NEEDED!
+   * 
+   * if (Timer.getFPGATimestamp()-startTime<1){
+   * // wait for 1 second to launch the first cargo
+   * driveLeftTalon.set(ControlMode.PercentOutput, 0);
+   * driveRightTalon.set(ControlMode.PercentOutput, 0);
+   * driveLeftSpark.set(0);
+   * driveRightSpark.set(0);
+   * } else if (Timer.getFPGATimestamp()-startTime>1 &&
+   * Timer.getFPGATimestamp()-startTime<1.25){
+   * // jiggle forward and back to get second cargo into place
+   * driveLeftTalon.set(ControlMode.PercentOutput, -0.5);
+   * driveRightTalon.set(ControlMode.PercentOutput, 0.5);
+   * driveLeftSpark.set(-0.5);
+   * driveRightSpark.set(0.5);
+   * } else if (Timer.getFPGATimestamp()-startTime>1.25 &&
+   * Timer.getFPGATimestamp()-startTime<1.5){
+   * driveLeftTalon.set(ControlMode.PercentOutput, 0.5);
+   * driveRightTalon.set(ControlMode.PercentOutput, -0.5);
+   * driveLeftSpark.set(0.5);
+   * driveRightSpark.set(-0.5);
+   * } else if (Timer.getFPGATimestamp()-startTime>1.5 &&
+   * Timer.getFPGATimestamp()-startTime<4.5) {
+   * // wait 3 seconds to fire 2nd cargo
+   * driveLeftTalon.set(ControlMode.PercentOutput, 0);
+   * driveRightTalon.set(ControlMode.PercentOutput, 0);
+   * driveLeftSpark.set(0);
+   * driveRightSpark.set(0);
+   * // reset encoders to zero to back out of Tarmac area
+   * driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
+   * driveRightTalon.setSelectedSensorPosition(0, 0, 10);
+   * } else if (Timer.getFPGATimestamp()-startTime>4.5) {
+   * leaveTarmac = true;
+   * lastTimestamp = 0;
+   * // reset encoders to zero to back out of Tarmac area
+   * driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
+   * driveRightTalon.setSelectedSensorPosition(0, 0, 10);
+   * }
+   * 
+   * 
+   * 
+   * 
+   * 
+   * // PART 5: BACK OUT OF TARMAC
+   * } else if (leaveTarmac) {
+   * // move completely out of Tarmac area - back up 3 feet
+   * 
+   * // calculations (error = distance from setpoint)
+   * double error = finalSetPoint - sensorPosition;
+   * double dt = Timer.getFPGATimestamp() - lastTimestamp;
+   * SmartDashboard.putNumber("Tarmac error", error);
+   * 
+   * if (Math.abs(error) < iLimit) {
+   * errorSum += error * dt;
+   * }
+   * 
+   * double errorRate = (error - lastError) / dt;
+   * 
+   * double outputSpeed = -1 * (kP * error + kI * errorSum + kD * errorRate); //
+   * *-1 need to move in reverse!
+   * 
+   * // output to motors
+   * driveLeftTalon.set(ControlMode.PercentOutput, -outputSpeed);
+   * driveRightTalon.set(ControlMode.PercentOutput, outputSpeed);
+   * driveLeftSpark.set(-outputSpeed);
+   * driveRightSpark.set(outputSpeed);
+   * 
+   * // update last- variables
+   * lastTimestamp = Timer.getFPGATimestamp();
+   * lastError = error;
+   * }
+   * }
+   */
 
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+  }
 
   boolean reverse = false;
 
   @Override
   public void teleopPeriodic() {
 
-    if (joyDrive.getRawAxis(3)>0.5){  // if right trigger then direction reversed - backward is now forward
+    if (joyDrive.getRawAxis(3) > 0.5) { // if right trigger then direction reversed - backward is now forward
       reverse = true;
     } else {
       reverse = false;
@@ -514,28 +607,28 @@ public class Robot extends TimedRobot {
     double left = 0;
     double right = 0;
 
-    if (reverse){
+    if (reverse) {
       if (speed <= -0.01) {
         left = speed + turn;
-        right = speed - turn;  
+        right = speed - turn;
       } else {
         left = speed - turn;
         right = speed + turn;
       }
-      driveLeftTalon.set(ControlMode.PercentOutput,-left);
-      driveRightTalon.set(ControlMode.PercentOutput,right);
+      driveLeftTalon.set(ControlMode.PercentOutput, -left);
+      driveRightTalon.set(ControlMode.PercentOutput, right);
       driveLeftSpark.set(-left);
       driveRightSpark.set(right);
     } else {
       if (speed <= -0.01) {
         left = speed - turn;
-        right = speed + turn;  
+        right = speed + turn;
       } else {
         left = speed + turn;
         right = speed - turn;
       }
-      driveLeftTalon.set(ControlMode.PercentOutput,left);
-      driveRightTalon.set(ControlMode.PercentOutput,-right);
+      driveLeftTalon.set(ControlMode.PercentOutput, left);
+      driveRightTalon.set(ControlMode.PercentOutput, -right);
       driveLeftSpark.set(left);
       driveRightSpark.set(-right);
     }
@@ -547,37 +640,37 @@ public class Robot extends TimedRobot {
     double intakePower = 0;
     double climberPower = 0;
 
-    if (joyLauncher.getRawAxis(3)>0.1){
+    if (joyLauncher.getRawAxis(3) > 0.1) {
       launcherPower = -0.6;
       indexerPower = -1;
     }
-    
+
     double triggerPower = 0;
-    
-    if (joyLauncher.getRawAxis(2)>0.1){
-      triggerPower = joyLauncher.getRawAxis(2)*(-1);
+
+    if (joyLauncher.getRawAxis(2) > 0.1) {
+      triggerPower = joyLauncher.getRawAxis(2) * (-1);
     }
 
     triggerSpark.set(triggerPower);
 
-    if (joyLauncher.getRawButton(1)==true){
+    if (joyLauncher.getRawButton(1) == true) {
       intakePower = -0.6;
       indexerPower = -1;
     }
 
-    if (joyLauncher.getRawButton(3)==true){
+    if (joyLauncher.getRawButton(3) == true) {
       climberPower = 1;
     }
 
-    if (joyLauncher.getRawButton(4)==true){
+    if (joyLauncher.getRawButton(4) == true) {
       climberPower = -1;
     }
 
-    if (joyLauncher.getRawButton(2)==true){ // reverse intake to unstick ball!
-      intakePower = 1; 
+    if (joyLauncher.getRawButton(2) == true) { // reverse intake to unstick ball!
+      intakePower = 1;
     }
 
-    intakeSpark.set(intakePower);    
+    intakeSpark.set(intakePower);
     launcherSpark.set(launcherPower);
     indexerSpark.set(indexerPower);
     climberSpark.set(climberPower);
@@ -585,14 +678,18 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+  }
 
   @Override
-  public void testInit() {}
+  public void testInit() {
+  }
 
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+  }
 }
