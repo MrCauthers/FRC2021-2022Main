@@ -147,9 +147,9 @@ public class Robot extends TimedRobot {
   double setPointTurn = 180; // for gyro turn
   // double setPointTurn = 3.35; // for encoder (turn value 3.35 = 180 degree turn on linoleum)
   boolean movetoLaunchSetpoint = false;
-  double launchSetpoint = 2;
+  double launchSetpoint = 5;
   boolean encodersReset = false;
-  double finalSetPoint = -6;
+  double finalSetPoint = -8;
   boolean atLaunchSetpoint = false;
   boolean atFinalSetpoint = false;
   boolean leaveTarmac = false;
@@ -471,20 +471,22 @@ public class Robot extends TimedRobot {
         // reset startTime
         startTime = Timer.getFPGATimestamp();
       }
-      triggerSpark.set(-1);
+      //triggerSpark.set(-1);
 
       // PART 4: LAUNCH!
 
     } else if (atLaunchSetpoint && !leaveTarmac) {
-      triggerSpark.set(-1);
+
       // double error = 0; DELETE IF NOT NEEDED!
 
-      if (Timer.getFPGATimestamp() - startTime < 1) {
+      if (Timer.getFPGATimestamp() - startTime < 2) {
         // wait for 1 second to launch the first cargo
         driveLeftTalon.set(ControlMode.PercentOutput, 0);
         driveRightTalon.set(ControlMode.PercentOutput, 0);
         driveLeftSpark.set(0);
         driveRightSpark.set(0);
+      } else if (Timer.getFPGATimestamp()-startTime < 5) {
+        triggerSpark.set(-1);
       /* NOT NEEDED ANYMORE???
       } else if (Timer.getFPGATimestamp() - startTime > 1 &&
           Timer.getFPGATimestamp() - startTime < 1.25) {
@@ -509,7 +511,7 @@ public class Robot extends TimedRobot {
         // reset encoders to zero to back out of Tarmac area
         driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
         driveRightTalon.setSelectedSensorPosition(0, 0, 10);   */
-      } else if (Timer.getFPGATimestamp() - startTime > 2) {
+      } else if (Timer.getFPGATimestamp() - startTime > 5) {
         leaveTarmac = true;
         lastTimestamp = 0;
         // reset encoders to zero to back out of Tarmac area
@@ -564,8 +566,8 @@ public class Robot extends TimedRobot {
     driveLeftTalon.setNeutralMode(NeutralMode.Coast);
     driveRightTalon.setNeutralMode(NeutralMode.Coast);
 
-    double speed = -joyDrive.getRawAxis(1) * 0.6;
-    double turn = joyDrive.getRawAxis(4) * 0.3;
+    double speed = -joyDrive.getRawAxis(1) * 0.7;
+    double turn = joyDrive.getRawAxis(4) * 0.4;
 
     // deadband - if joystick is resting SLIGHTLY off centre, will ignore value
     if (Math.abs(speed) < 0.05) {
@@ -619,6 +621,10 @@ public class Robot extends TimedRobot {
     }
 
     double triggerPower = 0;
+
+    if (joyDrive.getRawAxis(2) > 0.1) {
+      turn = joyDrive.getRawAxis(4) * 0.3;      
+    }
 
     if (joyLauncher.getRawAxis(2) > 0.1) {
       triggerPower = joyLauncher.getRawAxis(2) * (-1);
