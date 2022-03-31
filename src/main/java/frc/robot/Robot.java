@@ -149,7 +149,7 @@ public class Robot extends TimedRobot {
   boolean movetoLaunchSetpoint = false;
   double launchSetpoint = 2;
   boolean encodersReset = false;
-  double finalSetPoint = -9;
+  double finalSetPoint = -6;
   boolean atLaunchSetpoint = false;
   boolean atFinalSetpoint = false;
   boolean leaveTarmac = false;
