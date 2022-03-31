@@ -331,7 +331,7 @@ public class Robot extends TimedRobot {
       if ((angle < setPointTurn) && (error > 90)) {
         outputSpeed = 0.3;
       } else if ((angle < setPointTurn) && (error > 1)){
-        outputSpeed = 0.1;
+        outputSpeed = 0.125;
       } else {
         outputSpeed = -0.01;  // hard stop!
       }
