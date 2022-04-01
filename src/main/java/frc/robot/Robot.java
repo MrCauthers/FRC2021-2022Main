@@ -568,9 +568,10 @@ public class Robot extends TimedRobot {
 
     double speed = -joyDrive.getRawAxis(1) * 0.7;
     double turn = joyDrive.getRawAxis(4) * 0.4;
+
     // makes turn less touchy for positioning when starting climb
     if (joyDrive.getRawAxis(2) > 0.1) {
-      turn = 0.1;
+      turn = joyDrive.getRawAxis(4) * 0.15;
     }
 
     // deadband - if joystick is resting SLIGHTLY off centre, will ignore value
