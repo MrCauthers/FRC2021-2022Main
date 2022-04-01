@@ -563,11 +563,19 @@ public class Robot extends TimedRobot {
       reverse = false;
     }
 
+    // makes turn a little less touchy for positioning when starting climb
+    double turnFactor = 1;
+    if (joyDrive.getRawAxis(2) > 0.1) {
+      turnFactor = 0.8;      
+    } else {
+      turnFactor = 1;
+    }
+
     driveLeftTalon.setNeutralMode(NeutralMode.Coast);
     driveRightTalon.setNeutralMode(NeutralMode.Coast);
 
     double speed = -joyDrive.getRawAxis(1) * 0.7;
-    double turn = joyDrive.getRawAxis(4) * 0.4;
+    double turn = joyDrive.getRawAxis(4) * 0.4 * turnFactor;
 
     // deadband - if joystick is resting SLIGHTLY off centre, will ignore value
     if (Math.abs(speed) < 0.05) {
@@ -621,10 +629,6 @@ public class Robot extends TimedRobot {
     }
 
     double triggerPower = 0;
-
-    if (joyDrive.getRawAxis(2) > 0.1) {
-      turn = joyDrive.getRawAxis(4) * 0.3;      
-    }
 
     if (joyLauncher.getRawAxis(2) > 0.1) {
       triggerPower = joyLauncher.getRawAxis(2) * (-1);
