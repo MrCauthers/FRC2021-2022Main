@@ -394,7 +394,7 @@ public class Robot extends TimedRobot {
        * 
        * // move cargo into position - always running from now on!
        * indexerSpark.set(-1);
-       * launcherSpark.set(-0.6);
+       * launcherSpark.set(-0.55);
        * 
        * double error = setPointTurn - leftPosition;
        * double dt = Timer.getFPGATimestamp() - lastTimestamp;
@@ -433,7 +433,7 @@ public class Robot extends TimedRobot {
     } else if (movetoLaunchSetpoint && !atLaunchSetpoint) {
       // keep moving cargo into position - still always on!
       indexerSpark.set(-1);
-      launcherSpark.set(-0.6);
+      launcherSpark.set(-0.55);
 
       // calculations (error = distance from launchSetpoint)
       double error = launchSetpoint - sensorPosition;
@@ -621,7 +621,7 @@ public class Robot extends TimedRobot {
     double climberPower = 0;
 
     if (joyLauncher.getRawAxis(3) > 0.1) {
-      launcherPower = -0.6;
+      launcherPower = -0.55;
       indexerPower = -1;
     }
 
