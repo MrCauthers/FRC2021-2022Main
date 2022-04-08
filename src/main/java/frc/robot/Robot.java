@@ -130,9 +130,11 @@ public class Robot extends TimedRobot {
   final double launchkP = 0.1;
   final double launchkI = 0.1;
   final double launchkD = 0;
-  // final double rotatekP = 0.01;
   final double iLimit = 1; // distance from set point when PID starts - NEED TO ADJUST?
-  final double iLimit180 = 1;
+  final double rotatekP = 0.00408;
+  final double rotatekI = 0.00544;
+  final double rotatekD = 0.000765;
+  final double iLimit180 = 30;
 
   double errorSum = 0;
   double lastTimestamp = 0;
@@ -285,16 +287,18 @@ public class Robot extends TimedRobot {
         driveRightTalon.set(ControlMode.PercentOutput, 0.5);
         driveLeftSpark.set(0);
         driveRightSpark.set(0);
+        intakeSpark.set(-0.6);
         // Rest of autonomous drive up until pick up position (setpoint)
       } else {
         // calculations (error = distance from setpoint)
         double error = setpoint - sensorPosition;
         double dt = Timer.getFPGATimestamp() - lastTimestamp;
+        intakeSpark.set(-0.6);
+
 
         if (Math.abs(error) < iLimit) {
           errorSum += error * dt;
           // start running intake when within 1 foot of setpoint
-          intakeSpark.set(-0.6);
         }
 
         double errorRate = (error - lastError) / dt;
@@ -323,7 +327,7 @@ public class Robot extends TimedRobot {
       // PART 2: 180 TURN
     } else if (start180 && !movetoLaunchSetpoint) {
       // attempt #2: using gyro - NO PID!
-      double outputSpeed = 0;
+  /*    double outputSpeed = 0;
       double angle = Math.abs(gyro.getAngle());
 
       double error = setPointTurn - angle;
@@ -358,36 +362,38 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("calculated angle", angle);
       SmartDashboard.putNumber("angle", gyro.getAngle());
       SmartDashboard.putNumber("180 outputSpeed", outputSpeed);
+*/
+      
+        // attempt #3: using gyro + PID - DOESN'T WORK!!!
+        double angle = Math.abs(gyro.getAngle());
 
-      /*
-       * // attempt #3: using gyro + PID - DOESN'T WORK!!!
-       * double angle = gyro.getAngle();
-       * 
-       * // calculations (error = distance from 180)
-       * double error = setPointTurn - Math.abs(angle);
-       * 
-       * SmartDashboard.putNumber("180 error", error);
-       * SmartDashboard.putNumber("calculated angle", angle);
-       * SmartDashboard.putNumber("angle", gyro.getAngle());
-       * 
-       * double outputSpeed = rotatekP * error;
-       * SmartDashboard.putNumber("180 outputSpeed", outputSpeed);
-       * 
-       * // output to motors
-       * driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
-       * driveRightTalon.set(ControlMode.PercentOutput, outputSpeed);
-       * driveLeftSpark.set(outputSpeed);
-       * driveRightSpark.set(outputSpeed);
-       * 
-       * if (Math.abs(error) < (0.5)) {
-       * movetoLaunchSetpoint = true;
-       * // reset startTime for next part
-       * startTime = Timer.getFPGATimestamp();
-       * // reset encoders to zero to move to launch position
-       * driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
-       * driveRightTalon.setSelectedSensorPosition(0, 0, 10);
-       * }
-       */
+        double error = setPointTurn - angle;
+        double dt = Timer.getFPGATimestamp() - lastTimestamp;
+    
+        if (Math.abs(error) < iLimit180) {
+          errorSum += error * dt;
+        }
+
+        if (Math.abs(error) < 2) {
+          movetoLaunchSetpoint = true;
+        }
+
+        double errorRate = (error - lastError) /dt;
+        double outputSpeed = rotatekP * error + rotatekI * errorSum + rotatekD * errorRate;
+    
+        // output to motors
+        driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
+        driveRightTalon.set(ControlMode.PercentOutput, outputSpeed);
+        driveLeftSpark.set(outputSpeed);
+        driveRightSpark.set(outputSpeed);
+    
+        // update last- variables
+        lastTimestamp = Timer.getFPGATimestamp();
+        lastError = error;
+        
+        SmartDashboard.putNumber("180 error", error);
+        SmartDashboard.putNumber("calculated angle", angle);
+        SmartDashboard.putNumber("180 outputSpeed", outputSpeed); 
 
       /*
        * // Attempt #1: using encoders only - WORKS, BUT NOT WELL!!!
