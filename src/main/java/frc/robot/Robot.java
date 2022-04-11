@@ -123,41 +123,41 @@ public class Robot extends TimedRobot {
   }
 
   // init variables for PID
-
-  final double kP = 0.12;
-  final double kI = 0.2;
+  final double kP = 0.2;
+  final double kI = 0;
   final double kD = 0;
-  final double launchkP = 0.1;
-  final double launchkI = 0.1;
+  final double launchkP = 0.2;
+  final double launchkI = 0;
   final double launchkD = 0;
-  final double iLimit = 1; // distance from set point when PID starts - NEED TO ADJUST?
+  final double iLimit = 1; // distance from setpoint when PID starts (# of feet)
   final double rotatekP = 0.00408;
   final double rotatekI = 0.00544;
   final double rotatekD = 0.000765;
-  final double iLimit180 = 30;
+  final double iLimit180 = 30; // # of degrees from setpoint when PID starts
 
   double errorSum = 0;
   double lastTimestamp = 0;
   double startTime = 0;
   double lastError = 0;
 
+  // define set points for autonomous
+  // double setpoint = -5; //ONLY USED FOR AUTONOMOUS A & C: BACK UP AND SHOOT OR BACK UP ONLY
   double setpoint = 6.5; // ONLY USED FOR AUTONOMOUS B: FULL AUTO WITH 180 TURN AND FIRE
-
-  // double setpoint = -5; //ONLY USED FOR AUTONOMOUS A & C: BACK UP AND SHOOT
-
-  boolean start180 = false;
   double setPointTurn = 180; // for gyro turn
   // double setPointTurn = 3.35; // for encoder (turn value 3.35 = 180 degree turn on linoleum)
-  boolean movetoLaunchSetpoint = false;
-  double launchSetpoint = 5;
-  boolean encodersReset = false;
+  double launchSetpoint = 2.5;
   double finalSetPoint = -8;
+
+  // define boolean for each stage of autonomous - will only move to next stage if true
+  boolean start180 = false;
+  boolean movetoLaunchSetpoint = false;
   boolean atLaunchSetpoint = false;
   boolean atFinalSetpoint = false;
   boolean leaveTarmac = false;
 
-  @Override
+  boolean encodersReset = false;
 
+  @Override
   /*
    * public void autonomousPeriodic() { // AUTONOMOUS A - simple back up and fire
    * 
@@ -277,7 +277,7 @@ public class Robot extends TimedRobot {
     if (!start180) {
       if (Timer.getFPGATimestamp() - startTime < 1) {
         driveLeftTalon.set(ControlMode.PercentOutput, 0.4);
-        driveRightTalon.set(ControlMode.PercentOutput, -0.4);
+        driveRightTalon.set(ControlMode.PercentOutput, -0.4); 
         driveLeftSpark.set(0.4);
         driveRightSpark.set(-0.4);
         // Next 0.5 seconds of autonomous - stop drive motors, intake will fall into
@@ -362,9 +362,8 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("calculated angle", angle);
       SmartDashboard.putNumber("angle", gyro.getAngle());
       SmartDashboard.putNumber("180 outputSpeed", outputSpeed);
-*/
-      
-        // attempt #3: using gyro + PID - DOESN'T WORK!!!
+*/     
+        // attempt #3: using gyro + PID (WORKS!!!)
         double angle = Math.abs(gyro.getAngle());
 
         double error = setPointTurn - angle;
@@ -376,6 +375,9 @@ public class Robot extends TimedRobot {
 
         if (Math.abs(error) < 2) {
           movetoLaunchSetpoint = true;
+          // reset encoders to zero
+          driveLeftTalon.setSelectedSensorPosition(0, 0, 10);
+          driveRightTalon.setSelectedSensorPosition(0, 0, 10);
         }
 
         double errorRate = (error - lastError) /dt;
@@ -391,10 +393,6 @@ public class Robot extends TimedRobot {
         lastTimestamp = Timer.getFPGATimestamp();
         lastError = error;
         
-        SmartDashboard.putNumber("180 error", error);
-        SmartDashboard.putNumber("calculated angle", angle);
-        SmartDashboard.putNumber("180 outputSpeed", outputSpeed); 
-
       /*
        * // Attempt #1: using encoders only - WORKS, BUT NOT WELL!!!
        * 
@@ -452,8 +450,7 @@ public class Robot extends TimedRobot {
 
       double errorRate = (error - lastError) / dt;
 
-      double outputSpeed = launchkP * error + launchkI * errorSum + launchkD *
-          errorRate;
+      double outputSpeed = launchkP * error + launchkI * errorSum + launchkD * errorRate;
 
       // output to motors
       driveLeftTalon.set(ControlMode.PercentOutput, outputSpeed);
@@ -465,7 +462,7 @@ public class Robot extends TimedRobot {
       lastTimestamp = Timer.getFPGATimestamp();
       lastError = error;
 
-      if (Math.abs(error) < 0.01) {
+      if (Math.abs(error) < 0.2) {
         atLaunchSetpoint = true;
         driveLeftTalon.set(ControlMode.PercentOutput, 0);
         driveRightTalon.set(ControlMode.PercentOutput, 0);
@@ -527,7 +524,12 @@ public class Robot extends TimedRobot {
 
       // PART 5: BACK OUT OF TARMAC
     } else if (leaveTarmac) {
-      // move completely out of Tarmac area - back up 3 feet
+      // move completely out of Tarmac area - back up 5 feet
+
+      launcherSpark.set(0);
+      triggerSpark.set(0);
+      indexerSpark.set(0);
+      intakeSpark.set(0);
 
       // calculations (error = distance from setpoint)
       double error = finalSetPoint - sensorPosition;
@@ -572,7 +574,7 @@ public class Robot extends TimedRobot {
     driveLeftTalon.setNeutralMode(NeutralMode.Coast);
     driveRightTalon.setNeutralMode(NeutralMode.Coast);
 
-    double speed = -joyDrive.getRawAxis(1) * 0.7;
+    double speed = -joyDrive.getRawAxis(1) * 0.8;
     double turn = joyDrive.getRawAxis(4) * 0.4;
 
     // makes turn less touchy for positioning when starting climb
