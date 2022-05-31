@@ -158,8 +158,12 @@ public class Robot extends TimedRobot {
   boolean encodersReset = false;
 
   @Override
+
+    public void autonomousPeriodic() {  //EMPTY AUTONOMOUS!!!
+    }
+
   
-    public void autonomousPeriodic() { // AUTONOMOUS A - simple back up and fire
+/*    public void autonomousPeriodic() { // AUTONOMOUS A - simple back up and fire
     
     // get sensor position
     double leftPosition = driveLeftTalon.getSelectedSensorPosition() *
@@ -209,7 +213,7 @@ public class Robot extends TimedRobot {
       triggerSpark.set(-1);
       
     }
-  }
+  } */
    
 
   /*
@@ -568,17 +572,19 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
+    /*    UNCOMMENT TO ENABLE!!
     if (joyDrive.getRawAxis(3) > 0.5) { // if right trigger then direction reversed - backward is now forward
       reverse = true;
     } else {
       reverse = false;
     }
+    */
 
     driveLeftTalon.setNeutralMode(NeutralMode.Coast);
     driveRightTalon.setNeutralMode(NeutralMode.Coast);
 
-    double speed = -joyDrive.getRawAxis(1) * 0.8;
-    double turn = joyDrive.getRawAxis(4) * 0.4;
+    double speed = -joyDrive.getRawAxis(1) * 0.4;  // COMP SPEED: 0.8
+    double turn = joyDrive.getRawAxis(4) * 0.25;  // COMP SPEED: 0.4
 
     // makes turn less touchy for positioning when starting climb
     if (joyDrive.getRawAxis(2) > 0.1) {
@@ -632,7 +638,7 @@ public class Robot extends TimedRobot {
     double climberPower = 0;
 
     if (joyLauncher.getRawAxis(3) > 0.1) {
-      launcherPower = -0.582                    ;
+      launcherPower = -0.582;  // SET TO -0.582 FOR COMP
       indexerPower = -1;
     }
 
